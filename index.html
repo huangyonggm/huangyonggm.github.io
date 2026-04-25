@@ -22,7 +22,6 @@
         .input-field { width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; margin-bottom: 15px; }
         .login-tip { margin-top: 30px; font-size: 14px; color: #666; line-height: 1.6; }
         .login-tip hr { margin: 20px 0; }
-        .test-account-hidden { color: #999; font-size: 13px; margin-top: 15px; padding-top: 15px; border-top: 1px dashed #ddd; }
 
         .student-header { background: linear-gradient(135deg, #2c3e50 0%, #1a1a2e 100%); color: white; padding: 20px; text-align: center; }
         .student-header h1 { font-size: 22px; margin-bottom: 5px; }
@@ -118,14 +117,7 @@
         <input type="text" id="username" class="input-field" placeholder="账号名" autocomplete="off">
         <input type="password" id="password" class="input-field" placeholder="密码" autocomplete="off">
         <button class="btn btn-primary" onclick="window.login()">登录系统</button>
-        <div class="login-tip">
-            <hr style="margin: 20px 0;">
-            <div class="test-account-hidden">
-                ⚡ 体验说明：<br>
-                学生账号：student / 123456<br>
-                商户账号：naicha / 123456
-            </div>
-        </div>
+        <!-- 账号密码提示已移除，请私下使用 student/123456 和 naicha/123456 -->
     </div>
 </div>
 
@@ -142,7 +134,7 @@
         </div>
         <div class="menu-section">
             <h2 class="menu-title">📋 今日菜单</h2>
-            <div id="foodGrid" class="food-grid"><div class="loading">加载菜单中...</div></div>
+            <div id="foodGrid" class="food-grid"></div>
         </div>
         <div class="form-section">
             <div class="form-group">
@@ -191,7 +183,7 @@
     </div>
 </div>
 
-<!-- 支付弹窗（收款码）- 文案已按新需求修改 -->
+<!-- 支付弹窗 -->
 <div id="paymentModal" class="modal-overlay">
     <div class="modal-content">
         <div class="payment-header">
@@ -200,12 +192,10 @@
         </div>
         <div>
             <img id="qrCodeImg" class="qr-img" referrerpolicy="no-referrer" src="qrcode.jpg" alt="收款码" onerror="this.src='https://placehold.co/200x200/FF9800/white?text=收款码'">
-            <!-- 微信付款：长按识别图中二维码 -->
             <div class="save-qr-tip">
                 <strong>📱 微信付款</strong><br>
                 ➤ 请将手指长按上面收款二维码，选择微信中弹出的“识别图中的二维码”，然后输入金额完成支付。
             </div>
-            <!-- 云闪付 / 支付宝 操作步骤 -->
             <div class="qr-hint">
                 💡 云闪付 / 支付宝 操作步骤：<br>
                 1️⃣ 长按二维码保存图片到手机相册<br>
@@ -237,11 +227,11 @@
         </div>
         <div class="merchant-section">
             <div class="section-title"><span>📦 商品管理</span><button class="add-btn" onclick="window.showAddProductModal()">+ 添加</button></div>
-            <div id="productManageList"><div class="loading">加载中...</div></div>
+            <div id="productManageList"></div>
         </div>
         <div class="merchant-section">
             <div class="section-title">📋 订单管理</div>
-            <div id="orderManageList"><div class="loading">加载中...</div></div>
+            <div id="orderManageList"></div>
         </div>
     </div>
 </div>
@@ -270,214 +260,49 @@
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     window.supabase = supabase;
     
-    // 新菜单：根据图片真实数据（前8个）
+    // 默认菜单（立即显示用）
     const DEFAULT_DRINKS = [
-        { name: '西瓜啵啵', price: 10, emoji: '🍉' },
-        { name: '多肉葡萄啵啵', price: 10, emoji: '🍇' },
-        { name: '鲜芒果奶盖', price: 10, emoji: '🥭' },
-        { name: '奥利奥奶茶 大杯', price: 8, emoji: '🍪' },
-        { name: '椰果奶茶 大杯', price: 8, emoji: '🥥' },
-        { name: '西瓜汁 大杯', price: 7, emoji: '🍉' },
-        { name: '鲜柠檬水', price: 4, emoji: '🍋' },
-        { name: '奶盖抹茶', price: 9, emoji: '🍵' }
+        { id: -1, name: '西瓜啵啵', price: 10, emoji: '🍉' },
+        { id: -2, name: '多肉葡萄啵啵', price: 10, emoji: '🍇' },
+        { id: -3, name: '鲜芒果奶盖', price: 10, emoji: '🥭' },
+        { id: -4, name: '奥利奥奶茶 大杯', price: 8, emoji: '🍪' },
+        { id: -5, name: '椰果奶茶 大杯', price: 8, emoji: '🥥' },
+        { id: -6, name: '西瓜汁 大杯', price: 7, emoji: '🍉' },
+        { id: -7, name: '鲜柠檬水', price: 4, emoji: '🍋' },
+        { id: -8, name: '奶盖抹茶', price: 9, emoji: '🍵' }
     ];
     
     let currentUser = null;
     let currentOrderTotal = 0;
     let selectedTime = "10分钟后";
-    let cart = [];
+    let cart = [];          // 购物车商品列表（动态更新）
     let orderSubmitted = false;
     const timeOptions = ["6分钟后", "10分钟后", "20分钟后", "30分钟后", "1小时后"];
-    
     let selectedTemp = "常温";
     let selectedSweet = "正常糖";
-    
     let leaveTime = null;
     let visibilityHandler = null;
     
-    // ----- 缓存相关函数 -----
+    // 本地存储 key
     const CACHE_KEY = 'tanglazha_menu_cache';
-    const CACHE_VERSION = 'v1';  // 简单版本控制，若将来需要强制刷新可修改
+    const LOCAL_ORDERS_KEY = 'tanglazha_local_orders';
     
-    function saveProductsToCache(products) {
-        try {
-            const cacheData = {
-                version: CACHE_VERSION,
-                timestamp: Date.now(),
-                products: products
-            };
-            localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
-        } catch(e) { console.warn('缓存写入失败', e); }
+    // ---------- 辅助函数 ----------
+    function showNotification(msg) { 
+        const n = document.getElementById('notification'); 
+        n.textContent = msg; 
+        n.classList.add('show'); 
+        setTimeout(() => n.classList.remove('show'), 2000); 
     }
+    window.showNotification = showNotification;
     
-    function getCachedProducts() {
-        try {
-            const raw = localStorage.getItem(CACHE_KEY);
-            if (!raw) return null;
-            const cache = JSON.parse(raw);
-            if (cache.version !== CACHE_VERSION) return null;
-            // 可选：设置缓存有效期（例如1小时），但为了快速体验，只要版本匹配就使用
-            if (cache.products && Array.isArray(cache.products) && cache.products.length > 0) {
-                return cache.products;
-            }
-            return null;
-        } catch(e) { return null; }
-    }
+    function isValidPhone(phone) { return /^1[3-9]\d{9}$/.test(phone); }
     
-    // 异步拉取最新菜单（带超时），如果获取成功则更新缓存并返回新菜单，否则返回 null
-    async function fetchLatestProducts() {
-        return new Promise(async (resolve) => {
-            let resolved = false;
-            const timeoutId = setTimeout(() => {
-                if (!resolved) {
-                    resolved = true;
-                    resolve(null);
-                }
-            }, 2000); // 2秒超时，不阻塞主流程
-            
-            try {
-                const { data, error } = await supabase.from('products').select('*').order('id');
-                if (!resolved) {
-                    clearTimeout(timeoutId);
-                    resolved = true;
-                    if (!error && data && data.length > 0) {
-                        resolve(data);
-                    } else {
-                        resolve(null);
-                    }
-                }
-            } catch (err) {
-                if (!resolved) {
-                    clearTimeout(timeoutId);
-                    resolved = true;
-                    resolve(null);
-                }
-            }
-        });
-    }
-    
-    // 确保数据库有默认商品（仅当表为空时）
-    async function initDefaultProducts() {
-        const { count, error } = await supabase.from('products').select('*', { count: 'exact', head: true });
-        if (!error && count === 0) {
-            for (const drink of DEFAULT_DRINKS) {
-                await supabase.from('products').insert([drink]);
-            }
-        }
-    }
-    
-    async function loadProducts() { 
-        const { data, error } = await supabase.from('products').select('*').order('id'); 
-        return error ? [] : (data || []); 
-    }
-    
-    async function addProductToDB(name, price, emoji) { 
-        const { data, error } = await supabase.from('products').insert([{ name, price, emoji }]).select(); 
-        if (error) throw error; 
-        return data[0]; 
-    }
-    async function updateProductInDB(id, name, price) { 
-        const { error } = await supabase.from('products').update({ name, price }).eq('id', id); 
-        if (error) throw error; 
-    }
-    async function deleteProductFromDB(id) { 
-        const { error } = await supabase.from('products').delete().eq('id', id); 
-        if (error) throw error; 
-    }
-    async function loadOrders() { 
-        const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false }); 
-        return error ? [] : (data || []); 
-    }
-    async function updateOrderStatus(orderId, status) { 
-        const { error } = await supabase.from('orders').update({ status }).eq('id', orderId); 
-        if (error) throw error; 
-    }
-    
-    // ------------------- 学生端初始化（秒开 + 异步更新） -------------------
-    async function initStudentPage() {
-        // 1. 确保数据库有默认商品（不影响缓存展示）
-        await initDefaultProducts();
-        
-        // 2. 先尝试从缓存读取并立即渲染（秒开）
-        let currentDisplayProducts = null;
-        const cached = getCachedProducts();
-        if (cached && cached.length > 0) {
-            currentDisplayProducts = cached;
-            renderMenu(currentDisplayProducts);
-            renderTimeSlots();
-            updateSummary();
-            orderSubmitted = false;
-            initFlavorSelectors();
-            setupVisibilityListener();
-        } else {
-            // 无缓存时显示加载动画，准备从网络/默认加载
-            document.getElementById('foodGrid').innerHTML = '<div class="loading">加载菜单中...</div>';
-        }
-        
-        // 3. 异步拉取最新菜单，若有更新则重新渲染并更新缓存
-        const latest = await fetchLatestProducts();
-        if (latest && latest.length > 0) {
-            // 比较新旧菜单（简单比较 JSON 字符串）
-            const newKey = JSON.stringify(latest);
-            const oldKey = currentDisplayProducts ? JSON.stringify(currentDisplayProducts) : '';
-            if (newKey !== oldKey) {
-                // 更新缓存
-                saveProductsToCache(latest);
-                // 重新渲染最新菜单
-                renderMenu(latest);
-                renderTimeSlots();
-                updateSummary();
-                // 如果当前购物车为空则无影响；如果有商品但菜单变了，为保险清空购物车并提示
-                if (cart.some(item => item.qty > 0)) {
-                    cart.forEach(item => item.qty = 0);
-                    updateSummary();
-                    showNotification('菜单已更新，购物车已清空');
-                }
-                initFlavorSelectors(); // 重新绑定事件
-            }
-        } else {
-            // 如果网络拉取失败但之前没有缓存，则使用默认菜单作为后备
-            if (!currentDisplayProducts) {
-                const fallback = DEFAULT_DRINKS.map((d, idx) => ({ id: idx + 100, ...d }));
-                renderMenu(fallback);
-                renderTimeSlots();
-                updateSummary();
-                orderSubmitted = false;
-                initFlavorSelectors();
-                setupVisibilityListener();
-                // 同时缓存这份默认菜单，以便下次秒开
-                saveProductsToCache(fallback);
-            }
-        }
-    }
-    
-    function initFlavorSelectors() {
-        document.querySelectorAll('#tempGroup .flavor-tag').forEach(el => {
-            el.removeEventListener('click', window._tempHandler);
-            const handler = () => {
-                document.querySelectorAll('#tempGroup .flavor-tag').forEach(t => t.classList.remove('selected'));
-                el.classList.add('selected');
-                selectedTemp = el.getAttribute('data-temp');
-            };
-            el.addEventListener('click', handler);
-            window._tempHandler = handler; // 避免重复，简单覆盖
-        });
-        document.querySelectorAll('#sweetnessGroup .flavor-tag').forEach(el => {
-            el.removeEventListener('click', window._sweetHandler);
-            const handler = () => {
-                document.querySelectorAll('#sweetnessGroup .flavor-tag').forEach(t => t.classList.remove('selected'));
-                el.classList.add('selected');
-                selectedSweet = el.getAttribute('data-sweet');
-            };
-            el.addEventListener('click', handler);
-            window._sweetHandler = handler;
-        });
-    }
-    
-    function renderMenu(products) {
-        cart = products.map(p => ({ ...p, qty: 0 }));
+    // 渲染菜单（基于当前 cart）
+    function renderMenu() {
         const grid = document.getElementById('foodGrid');
         if (!grid) return;
+        if (!cart.length) return;
         grid.innerHTML = cart.map(item => `
             <div class="food-card">
                 <div class="food-img"><div class="emoji-placeholder">${item.emoji || '🧋'}</div></div>
@@ -485,7 +310,7 @@
                 <div class="food-price">${item.price}</div>
                 <div class="qty-control">
                     <button class="qty-btn" onclick="window.changeQty(${item.id}, -1)">-</button>
-                    <span class="qty-value" id="qty_${item.id}">${item.qty}</span>
+                    <span class="qty-value" id="qty_${item.id}">${item.qty || 0}</span>
                     <button class="qty-btn" onclick="window.changeQty(${item.id}, 1)">+</button>
                 </div>
             </div>
@@ -515,34 +340,142 @@
     
     function renderTimeSlots() {
         const container = document.getElementById('timeSlots');
-        container.innerHTML = timeOptions.map(t => `<div class="time-tag ${t === selectedTime ? 'selected' : ''}" onclick="window.selectTime('${t}')">${t}</div>`).join('');
+        if (container) container.innerHTML = timeOptions.map(t => `<div class="time-tag ${t === selectedTime ? 'selected' : ''}" onclick="window.selectTime('${t}')">${t}</div>`).join('');
     }
     window.selectTime = function(t) { selectedTime = t; renderTimeSlots(); };
     
-    // 其他辅助函数
-    function autoFillStudentAccount() {
-        const usernameInput = document.getElementById('username');
-        const passwordInput = document.getElementById('password');
-        if (usernameInput && !usernameInput.value) usernameInput.value = 'student';
-        if (passwordInput && !passwordInput.value) passwordInput.value = '123456';
+    function initFlavorSelectors() {
+        // 温度选择
+        const tempGroup = document.getElementById('tempGroup');
+        if (tempGroup) {
+            tempGroup.querySelectorAll('.flavor-tag').forEach(el => {
+                el.onclick = () => {
+                    tempGroup.querySelectorAll('.flavor-tag').forEach(t => t.classList.remove('selected'));
+                    el.classList.add('selected');
+                    selectedTemp = el.getAttribute('data-temp');
+                };
+            });
+        }
+        // 甜度选择
+        const sweetGroup = document.getElementById('sweetnessGroup');
+        if (sweetGroup) {
+            sweetGroup.querySelectorAll('.flavor-tag').forEach(el => {
+                el.onclick = () => {
+                    sweetGroup.querySelectorAll('.flavor-tag').forEach(t => t.classList.remove('selected'));
+                    el.classList.add('selected');
+                    selectedSweet = el.getAttribute('data-sweet');
+                };
+            });
+        }
     }
     
-    function isValidPhone(phone) { return /^1[3-9]\d{9}$/.test(phone); }
-    function showNotification(msg) { const n = document.getElementById('notification'); n.textContent = msg; n.classList.add('show'); setTimeout(() => n.classList.remove('show'), 2000); }
-    window.showNotification = showNotification;
-    
-    function showSubmitStatus(message, type) {
-        const statusEl = document.getElementById('submitStatus');
-        statusEl.textContent = message;
-        statusEl.className = `submit-status ${type}`;
-        statusEl.style.display = 'block';
+    function buildFullRemark() {
+        let baseRemark = `🌡️温度：${selectedTemp} / 🍬甜度：${selectedSweet}`;
+        const extra = document.getElementById('orderRemark').value.trim();
+        if (extra) baseRemark += ` / 备注：${extra}`;
+        return baseRemark;
     }
-    function hideSubmitStatus() { const el = document.getElementById('submitStatus'); if(el) el.style.display = 'none'; }
+    
+    // ---------- 超时 + 重试的订单提交 ----------
+    async function submitOrderWithRetry(orderData, retries = 2) {
+        for (let i = 0; i <= retries; i++) {
+            try {
+                const { data, error } = await supabase.from('orders').insert([orderData]).select();
+                if (!error && data) return { success: true, data: data[0] };
+                if (error) console.warn(`提交失败 (尝试 ${i+1}/${retries+1}):`, error.message);
+            } catch (err) {
+                console.warn(`网络错误 (尝试 ${i+1}/${retries+1}):`, err);
+            }
+            if (i < retries) await new Promise(r => setTimeout(r, 1000));
+        }
+        // 全部失败，保存到本地
+        const localOrders = JSON.parse(localStorage.getItem(LOCAL_ORDERS_KEY) || '[]');
+        orderData.id = 'local_' + Date.now();
+        orderData.created_at = new Date().toISOString();
+        orderData.status = 'pending';
+        localOrders.push(orderData);
+        localStorage.setItem(LOCAL_ORDERS_KEY, JSON.stringify(localOrders));
+        return { success: false, localSaved: true, message: '网络异常，订单已保存至本地，请提醒商家处理。' };
+    }
+    
+    async function submitOrderToServer() {
+        const name = document.getElementById('userName').value.trim();
+        const phone = document.getElementById('userPhone').value.trim();
+        const fullRemark = buildFullRemark();
+        const orderItems = cart.filter(i => (i.qty || 0) > 0).map(i => ({
+            id: i.id, name: i.name, price: i.price, qty: i.qty, total: i.price * i.qty
+        }));
+        const orderData = {
+            order_no: 'JS' + Date.now().toString().slice(-8),
+            customer_name: name,
+            customer_phone: phone,
+            location: '1号窗口',
+            pickup_time: selectedTime,
+            remark: fullRemark,
+            items: orderItems,
+            total_amount: currentOrderTotal,
+            status: 'pending',
+            created_at: new Date().toISOString()
+        };
+        const result = await submitOrderWithRetry(orderData);
+        if (result.success) {
+            // 成功清空购物车
+            cart.forEach(i => i.qty = 0);
+            renderMenu();
+            updateSummary();
+            return { success: true, message: '订单提交成功' };
+        } else {
+            // 本地保存成功也清空购物车，避免重复提交
+            cart.forEach(i => i.qty = 0);
+            renderMenu();
+            updateSummary();
+            return { success: false, message: result.message || '提交失败，已保存至本地' };
+        }
+    }
+    
+    // ---------- 学生端初始化（秒开） ----------
+    async function initStudentPage() {
+        // 1. 立即使用默认菜单渲染（零延迟）
+        cart = DEFAULT_DRINKS.map(d => ({ ...d, qty: 0 }));
+        renderMenu();
+        renderTimeSlots();
+        updateSummary();
+        initFlavorSelectors();
+        orderSubmitted = false;
+        setupVisibilityListener();
+        
+        // 2. 后台异步尝试加载 Supabase 真实菜单
+        try {
+            const { data, error } = await supabase.from('products').select('*').order('id');
+            if (!error && data && data.length > 0) {
+                // 替换为真实菜单（保留原有数量的映射？直接清空购物车更安全）
+                const newCart = data.map(p => ({ ...p, qty: 0 }));
+                cart = newCart;
+                renderMenu();
+                updateSummary();
+                // 缓存到 localStorage
+                localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+            } else {
+                // 如果数据库为空，初始化默认商品
+                for (const drink of DEFAULT_DRINKS) {
+                    await supabase.from('products').insert([{ name: drink.name, price: drink.price, emoji: drink.emoji }]);
+                }
+                // 重新加载一次
+                const { data: newData } = await supabase.from('products').select('*').order('id');
+                if (newData && newData.length) {
+                    cart = newData.map(p => ({ ...p, qty: 0 }));
+                    renderMenu();
+                    updateSummary();
+                    localStorage.setItem(CACHE_KEY, JSON.stringify(newData));
+                }
+            }
+        } catch (err) {
+            console.warn('加载远程菜单失败，使用默认菜单', err);
+        }
+    }
     
     function setupVisibilityListener() {
-        if (visibilityHandler) {
-            document.removeEventListener('visibilitychange', visibilityHandler);
-        }
+        if (visibilityHandler) document.removeEventListener('visibilitychange', visibilityHandler);
         visibilityHandler = () => {
             if (document.visibilityState === 'hidden') {
                 leaveTime = Date.now();
@@ -575,59 +508,29 @@
         
         btn.disabled = true;
         btn.textContent = '⏳ 正在提交订单...';
-        showSubmitStatus('正在提交订单到商户端...', 'loading');
+        const statusDiv = document.getElementById('submitStatus');
+        statusDiv.style.display = 'block';
+        statusDiv.className = 'submit-status loading';
+        statusDiv.textContent = '正在提交订单到商户端...';
         
-        const orderResult = await submitOrderToServer();
-        if (!orderResult.success) {
-            btn.disabled = false; btn.textContent = '📤 提交订单';
-            showSubmitStatus(orderResult.message, 'error');
-            showNotification('订单提交失败：' + orderResult.message);
-            return;
+        const result = await submitOrderToServer();
+        if (result.success) {
+            orderSubmitted = true;
+            statusDiv.className = 'submit-status success';
+            statusDiv.textContent = '✅ 订单已成功提交到商户端！';
+            showNotification('订单提交成功！');
+            btn.textContent = '✅ 订单已提交，请耐心等待！';
+            btn.style.background = '#2196f3';
+            setTimeout(() => { statusDiv.style.display = 'none'; }, 4000);
+        } else {
+            statusDiv.className = 'submit-status error';
+            statusDiv.textContent = result.message || '❌ 提交失败，请重试或联系商家';
+            showNotification(result.message || '提交失败');
+            btn.disabled = false;
+            btn.textContent = '📤 提交订单';
+            btn.style.background = '#27ae60';
         }
-        orderSubmitted = true;
-        showSubmitStatus('✅ 订单已成功提交到商户端！', 'success');
-        showNotification('订单提交成功！');
-        btn.textContent = '✅ 订单已提交，请耐心等待！';
-        btn.style.background = '#2196f3';
-        setTimeout(() => { hideSubmitStatus(); }, 4000);
     };
-    
-    function buildFullRemark() {
-        let baseRemark = `🌡️温度：${selectedTemp} / 🍬甜度：${selectedSweet}`;
-        const extra = document.getElementById('orderRemark').value.trim();
-        if (extra) baseRemark += ` / 备注：${extra}`;
-        return baseRemark;
-    }
-    
-    async function submitOrderToServer() {
-        const name = document.getElementById('userName').value.trim();
-        const phone = document.getElementById('userPhone').value.trim();
-        const fullRemark = buildFullRemark();
-        const orderItems = cart.filter(i => (i.qty || 0) > 0).map(i => ({
-            id: i.id, name: i.name, price: i.price, qty: i.qty, total: i.price * i.qty
-        }));
-        const orderData = {
-            order_no: 'JS' + Date.now().toString().slice(-8),
-            customer_name: name,
-            customer_phone: phone,
-            location: '1号窗口',
-            pickup_time: selectedTime,
-            remark: fullRemark,
-            items: orderItems,
-            total_amount: currentOrderTotal,
-            status: 'pending'
-        };
-        try {
-            const { data, error } = await supabase.from('orders').insert([orderData]).select();
-            if (error) return { success: false, message: error.message };
-            cart.forEach(i => i.qty = 0);
-            // 重新刷新菜单（基于已有缓存，不重新拉取）
-            const products = getCachedProducts();
-            if (products) renderMenu(products);
-            updateSummary();
-            return { success: true, message: '订单提交成功', data: data[0] };
-        } catch (err) { return { success: false, message: err.message || '网络错误' }; }
-    }
     
     window.showPayment = function() {
         const name = document.getElementById('userName').value.trim();
@@ -642,7 +545,7 @@
         btn.disabled = false;
         btn.textContent = '📤 提交订单';
         btn.style.background = '#27ae60';
-        hideSubmitStatus();
+        document.getElementById('submitStatus').style.display = 'none';
         document.getElementById('modalAmount').innerHTML = `¥${currentOrderTotal.toFixed(2)}`;
         document.getElementById('paymentModal').classList.add('active');
         leaveTime = null;
@@ -658,79 +561,41 @@
         }
     };
     
-    // 商户端函数（保持不变，但会在修改商品时清除缓存？为了让学生端下次能更新，我们可以在商户端修改商品时清除学生缓存）
-    // 增加一个辅助：在商户端增删改商品后，清除 localStorage 缓存，以便学生下次重新拉取
-    async function invalidateStudentCache() {
-        localStorage.removeItem(CACHE_KEY);
+    // ---------- 商户端（同时显示本地订单） ----------
+    async function loadProductsForMerchant() {
+        try {
+            const { data, error } = await supabase.from('products').select('*').order('id');
+            if (!error && data) return data;
+        } catch(e) {}
+        return [];
     }
     
-    // 重写商户端的增删改方法，操作成功后清除缓存
-    const originalAddProduct = window.addProduct;
-    const originalEditProduct = window.editProduct;
-    const originalDeleteProduct = window.deleteProduct;
-    
-    window.addProduct = async function() {
-        const name = document.getElementById('newProductName').value.trim(); 
-        const price = parseFloat(document.getElementById('newProductPrice').value); 
-        const emoji = document.getElementById('newProductEmoji').value.trim() || '🧋';
-        if (!name || isNaN(price) || price <= 0) return showNotification('请正确填写'); 
-        await addProductToDB(name, price, emoji); 
-        window.closeAddProductModal(); 
-        showNotification('添加成功'); 
-        await invalidateStudentCache();
-        await renderProductList(); 
-        await updateStats(); 
-        const products = await loadProducts(); 
-        // 注意：商户端不需要重新渲染 student 菜单，只更新商品管理列表
-        document.getElementById('productManageList').innerHTML = products.map(item => `<div class="product-item"><div class="product-row"><div><div class="product-name">${item.emoji || '🧋'} ${item.name}</div><div class="product-price">¥${item.price}</div></div><div><button class="small-btn" onclick="window.editProduct(${item.id})">编辑</button><button class="small-btn danger" onclick="window.deleteProduct(${item.id})">删除</button></div></div></div>`).join('');
-        document.getElementById('newProductName').value = ''; 
-        document.getElementById('newProductPrice').value = ''; 
-        document.getElementById('newProductEmoji').value = '🧋';
-    };
-    
-    window.editProduct = async function(id) {
-        const products = await loadProducts(); 
-        const item = products.find(p => p.id === id);
-        if (!item) return;
-        const newName = prompt('新名称', item.name); 
-        const newPrice = prompt('新价格', item.price);
-        if (newName && newPrice && !isNaN(newPrice) && parseFloat(newPrice) > 0) { 
-            await updateProductInDB(id, newName.trim(), parseFloat(newPrice)); 
-            showNotification('已更新'); 
-            await invalidateStudentCache();
-            await renderProductList(); 
-            await updateStats(); 
-        }
-    };
-    
-    window.deleteProduct = async function(id) { 
-        if (confirm('确定删除？')) { 
-            await deleteProductFromDB(id); 
-            showNotification('已删除'); 
-            await invalidateStudentCache();
-            await renderProductList(); 
-            await updateStats(); 
-        } 
-    };
-    
-    // 商户端原有的 renderProductList / updateStats 等
     async function renderProductList() {
-        const products = await loadProducts();
+        const products = await loadProductsForMerchant();
         const container = document.getElementById('productManageList');
-        if (products.length === 0) { container.innerHTML = '<div class="empty-state">暂无商品，点击添加</div>'; return; }
+        if (!products.length) {
+            container.innerHTML = '<div class="empty-state">暂无商品，点击添加</div>';
+            return;
+        }
         container.innerHTML = products.map(item => `<div class="product-item"><div class="product-row"><div><div class="product-name">${item.emoji || '🧋'} ${item.name}</div><div class="product-price">¥${item.price}</div></div><div><button class="small-btn" onclick="window.editProduct(${item.id})">编辑</button><button class="small-btn danger" onclick="window.deleteProduct(${item.id})">删除</button></div></div></div>`).join('');
+        document.getElementById('totalProducts').innerText = products.length;
     }
     
-    async function updateStats() {
-        const products = await loadProducts();
-        const orders = await loadOrders();
-        document.getElementById('totalProducts').innerText = products.length;
-        document.getElementById('pendingOrders').innerText = orders.filter(o => o.status === 'pending').length;
-        document.getElementById('totalOrders').innerText = orders.length;
+    // 合并远程订单和本地订单
+    async function getAllOrders() {
+        let remoteOrders = [];
+        try {
+            const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+            if (!error && data) remoteOrders = data;
+        } catch(e) {}
+        const localOrders = JSON.parse(localStorage.getItem(LOCAL_ORDERS_KEY) || '[]');
+        const allOrders = [...remoteOrders, ...localOrders];
+        allOrders.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+        return allOrders;
     }
     
     async function renderOrderList() {
-        const orders = await loadOrders();
+        const orders = await getAllOrders();
         const container = document.getElementById('orderManageList');
         if (orders.length === 0) { container.innerHTML = '<div class="empty-state">暂无订单</div>'; return; }
         container.innerHTML = orders.map(order => {
@@ -739,67 +604,152 @@
             else if (order.status === 'paid') { statusText = '💰 已收款'; statusClass = 'paid'; }
             else { statusText = '✅ 已完成'; statusClass = 'completed'; }
             
-            const parseFlavorFromRemark = (remark) => {
-                if (!remark) return { temp: null, sweet: null };
-                let temp = null, sweet = null;
-                const tempMatch = remark.match(/温度[：:]\s*([^\/\s]+)/);
-                const sweetMatch = remark.match(/甜度[：:]\s*([^\/\s]+)/);
-                if (tempMatch) temp = tempMatch[1];
-                if (sweetMatch) sweet = sweetMatch[1];
-                return { temp, sweet };
-            };
-            const { temp, sweet } = parseFlavorFromRemark(order.remark);
+            const remark = order.remark || '';
+            let temp = '', sweet = '';
+            const tempMatch = remark.match(/温度[：:]\s*([^\/\s]+)/);
+            const sweetMatch = remark.match(/甜度[：:]\s*([^\/\s]+)/);
+            if (tempMatch) temp = tempMatch[1];
+            if (sweetMatch) sweet = sweetMatch[1];
+            
+            const isLocal = order.id && String(order.id).startsWith('local_');
+            const localBadge = isLocal ? '<span style="background:#f39c12; font-size:10px; margin-left:6px;">📱 本地</span>' : '';
             
             return `<div class="order-card">
-                <div><span class="order-id">${order.order_no}</span><span class="order-status ${statusClass}">${statusText}</span></div>
+                <div><span class="order-id">${order.order_no || order.id}</span><span class="order-status ${statusClass}">${statusText}</span>${localBadge}</div>
                 <div class="order-details">
                     <div>🏫 建设学校学生食堂 | 🧋 唐蔗拉茶</div>
                     <div>👤 ${order.customer_name} | 📞 ${order.customer_phone}</div>
                     <div>📍 ${order.location || '1号窗口'} | ⏰ ${order.pickup_time}</div>
                     ${(temp || sweet) ? `<div>🍽️ <strong>口味要求：</strong> ${temp ? `<span class="flavor-badge temp">🌡️ ${temp}</span>` : ''} ${sweet ? `<span class="flavor-badge sweet">🍬 ${sweet}</span>` : ''}</div>` : ''}
-                    <div>📝 完整备注：${order.remark || '无'}</div>
+                    <div>📝 完整备注：${remark || '无'}</div>
                     <div>🕐 ${new Date(order.created_at).toLocaleString('zh-CN')}</div>
                     <div>🧾 ${order.items.map(i => `${i.name} x${i.qty}`).join('、')}</div>
                     <div>💵 合计金额：<strong style="color:#e74c3c;">¥${order.total_amount}</strong></div>
                 </div>
-                ${order.status === 'pending' ? `<button class="small-btn success" style="margin-top:10px; width:100%;" onclick="window.confirmPaymentOrder(${order.id})">✓ 确认已收款</button>` : ''}
-                ${order.status === 'paid' ? `<button class="small-btn" style="margin-top:10px; width:100%; background:#2196f3;" onclick="window.completeOrder(${order.id})">📦 完成取餐</button>` : ''}
+                ${order.status === 'pending' ? `<button class="small-btn success" style="margin-top:10px; width:100%;" onclick="window.confirmPaymentOrder('${order.id}')">✓ 确认已收款</button>` : ''}
+                ${order.status === 'paid' ? `<button class="small-btn" style="margin-top:10px; width:100%; background:#2196f3;" onclick="window.completeOrder('${order.id}')">📦 完成取餐</button>` : ''}
             </div>`;
         }).join('');
+        
+        const pendingCount = orders.filter(o => o.status === 'pending').length;
+        document.getElementById('pendingOrders').innerText = pendingCount;
+        document.getElementById('totalOrders').innerText = orders.length;
     }
     
-    async function initMerchantPage() {
-        await initDefaultProducts();
-        await renderProductList();
-        await renderOrderList();
-        await updateStats();
-        supabase.channel('orders-channel').on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => { renderOrderList(); updateStats(); }).subscribe();
-    }
+    window.confirmPaymentOrder = async function(orderId) {
+        if (String(orderId).startsWith('local_')) {
+            let localOrders = JSON.parse(localStorage.getItem(LOCAL_ORDERS_KEY) || '[]');
+            const idx = localOrders.findIndex(o => o.id === orderId);
+            if (idx !== -1) {
+                localOrders[idx].status = 'paid';
+                localStorage.setItem(LOCAL_ORDERS_KEY, JSON.stringify(localOrders));
+                showNotification('本地订单已标记为已收款');
+                await renderOrderList();
+            }
+        } else {
+            await supabase.from('orders').update({ status: 'paid' }).eq('id', orderId);
+            showNotification('已确认收款');
+            await renderOrderList();
+        }
+    };
     
-    window.confirmPaymentOrder = async function(orderId) { await updateOrderStatus(orderId, 'paid'); showNotification('已确认收款'); await renderOrderList(); await updateStats(); };
-    window.completeOrder = async function(orderId) { await updateOrderStatus(orderId, 'completed'); showNotification('订单已完成取餐'); await renderOrderList(); await updateStats(); };
+    window.completeOrder = async function(orderId) {
+        if (String(orderId).startsWith('local_')) {
+            let localOrders = JSON.parse(localStorage.getItem(LOCAL_ORDERS_KEY) || '[]');
+            const idx = localOrders.findIndex(o => o.id === orderId);
+            if (idx !== -1) {
+                localOrders[idx].status = 'completed';
+                localStorage.setItem(LOCAL_ORDERS_KEY, JSON.stringify(localOrders));
+                showNotification('订单已完成取餐');
+                await renderOrderList();
+            }
+        } else {
+            await supabase.from('orders').update({ status: 'completed' }).eq('id', orderId);
+            showNotification('订单已完成取餐');
+            await renderOrderList();
+        }
+    };
+    
     window.showAddProductModal = function() { document.getElementById('addProductModal').classList.add('active'); };
     window.closeAddProductModal = function() { document.getElementById('addProductModal').classList.remove('active'); };
     
-    window.login = async function() {
-        const username = document.getElementById('username').value; const password = document.getElementById('password').value;
-        if (username === 'student' && password === '123456') {
-            currentUser = { type: 'student' }; document.getElementById('pageLogin').style.display = 'none'; document.getElementById('studentPage').style.display = 'block'; document.getElementById('merchantPage').style.display = 'none'; await initStudentPage(); showNotification('欢迎，同学！');
-        } else if (username === 'naicha' && password === '123456') {
-            currentUser = { type: 'merchant' }; document.getElementById('pageLogin').style.display = 'none'; document.getElementById('studentPage').style.display = 'none'; document.getElementById('merchantPage').style.display = 'block'; await initMerchantPage(); showNotification('欢迎，商家！');
-        } else { showNotification('账号或密码错误'); }
+    window.addProduct = async function() {
+        const name = document.getElementById('newProductName').value.trim();
+        const price = parseFloat(document.getElementById('newProductPrice').value);
+        const emoji = document.getElementById('newProductEmoji').value.trim() || '🧋';
+        if (!name || isNaN(price) || price <= 0) return showNotification('请正确填写');
+        await supabase.from('products').insert([{ name, price, emoji }]);
+        window.closeAddProductModal();
+        showNotification('添加成功');
+        await renderProductList();
+        await renderOrderList();
+        document.getElementById('newProductName').value = '';
+        document.getElementById('newProductPrice').value = '';
+        document.getElementById('newProductEmoji').value = '🧋';
     };
     
-    window.logout = function() { 
-        if (visibilityHandler) document.removeEventListener('visibilitychange', visibilityHandler);
-        currentUser = null; 
-        document.getElementById('pageLogin').style.display = 'block'; 
-        document.getElementById('studentPage').style.display = 'none'; 
-        document.getElementById('merchantPage').style.display = 'none'; 
-        autoFillStudentAccount(); 
-        showNotification('已退出'); 
+    window.editProduct = async function(id) {
+        const newName = prompt('新名称');
+        const newPrice = prompt('新价格');
+        if (newName && newPrice && !isNaN(newPrice) && parseFloat(newPrice) > 0) {
+            await supabase.from('products').update({ name: newName.trim(), price: parseFloat(newPrice) }).eq('id', id);
+            showNotification('已更新');
+            await renderProductList();
+        }
     };
-    document.addEventListener('DOMContentLoaded', () => { autoFillStudentAccount(); });
+    
+    window.deleteProduct = async function(id) {
+        if (confirm('确定删除？')) {
+            await supabase.from('products').delete().eq('id', id);
+            showNotification('已删除');
+            await renderProductList();
+        }
+    };
+    
+    async function initMerchantPage() {
+        await renderProductList();
+        await renderOrderList();
+        // 监听远程订单变化
+        supabase.channel('orders-channel').on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => { renderOrderList(); }).subscribe();
+    }
+    
+    // ---------- 登录 ----------
+    window.login = async function() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        if (username === 'student' && password === '123456') {
+            currentUser = { type: 'student' };
+            document.getElementById('pageLogin').style.display = 'none';
+            document.getElementById('studentPage').style.display = 'block';
+            document.getElementById('merchantPage').style.display = 'none';
+            await initStudentPage();
+            showNotification('欢迎，同学！');
+        } else if (username === 'naicha' && password === '123456') {
+            currentUser = { type: 'merchant' };
+            document.getElementById('pageLogin').style.display = 'none';
+            document.getElementById('studentPage').style.display = 'none';
+            document.getElementById('merchantPage').style.display = 'block';
+            await initMerchantPage();
+            showNotification('欢迎，商家！');
+        } else {
+            showNotification('账号或密码错误');
+        }
+    };
+    
+    window.logout = function() {
+        if (visibilityHandler) document.removeEventListener('visibilitychange', visibilityHandler);
+        currentUser = null;
+        document.getElementById('pageLogin').style.display = 'block';
+        document.getElementById('studentPage').style.display = 'none';
+        document.getElementById('merchantPage').style.display = 'none';
+        showNotification('已退出');
+    };
+    
+    // 自动填充测试账号（方便调试，但不在界面提示）
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('username').value = 'student';
+        document.getElementById('password').value = '123456';
+    });
 </script>
 </body>
 </html>
