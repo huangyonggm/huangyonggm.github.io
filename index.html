@@ -59,22 +59,22 @@
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; }
         .modal-overlay.active { display: flex; }
-        .modal-content { background: white; border-radius: 20px; padding: 25px; text-align: center; max-width: 380px; width: 100%; max-height: 90vh; overflow-y: auto; }
-        .payment-header { background: linear-gradient(135deg, #FFC107 0%, #FF9800 100%); color: white; margin: -25px -25px 20px -25px; padding: 20px; border-radius: 20px 20px 0 0; }
-        .payment-amount { font-size: 32px; font-weight: bold; margin-top: 5px; }
-        .qr-img { width: 200px; height: 200px; object-fit: contain; margin: 10px auto; border: 1px solid #ddd; border-radius: 12px; display: block; }
-        .qr-hint { font-size: 13px; color: #666; margin: 10px 0; line-height: 1.5; }
-        .payment-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+        .modal-content { background: white; border-radius: 20px; padding: 20px 20px 25px; text-align: center; max-width: 380px; width: 100%; max-height: 90vh; overflow-y: auto; }
+        .payment-header { background: linear-gradient(135deg, #FFC107 0%, #FF9800 100%); color: white; margin: -20px -20px 16px -20px; padding: 14px 20px; border-radius: 20px 20px 0 0; display: flex; justify-content: space-between; align-items: baseline; }
+        .payment-header span:first-child { font-size: 16px; opacity: 0.9; }
+        .payment-amount { font-size: 28px; font-weight: bold; }
+        .qr-img { width: 180px; height: 180px; object-fit: contain; margin: 8px auto; border: 1px solid #ddd; border-radius: 12px; display: block; }
+        .qr-hint { font-size: 13px; color: #666; margin: 8px 0; line-height: 1.4; }
+        .payment-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
         .action-btn { width: 100%; padding: 12px; border: none; border-radius: 10px; font-size: 15px; cursor: pointer; font-weight: 500; }
         .btn-save-order { background: #27ae60; color: white; }
         .btn-cancel { background: #ecf0f1; color: #666; }
-        .warning-text { color: #e74c3c; font-size: 12px; margin-top: 8px; padding: 6px; background: #ffe0e0; border-radius: 8px; }
-        .submit-status { margin-top: 10px; padding: 8px; border-radius: 8px; font-size: 13px; }
+        .submit-status { margin-top: 8px; padding: 6px; border-radius: 8px; font-size: 12px; }
         .submit-status.success { background: #d4edda; color: #155724; }
         .submit-status.error { background: #f8d7da; color: #721c24; }
         .submit-status.loading { background: #fff3cd; color: #856404; }
-        .manual-save-hint { background: #e3f2fd; border-radius: 10px; padding: 12px; margin: 15px 0 10px; text-align: left; font-size: 13px; color: #1565c0; border-left: 4px solid #2196f3; }
-        .manual-save-hint strong { display: block; margin-bottom: 8px; font-size: 14px; }
+        .save-qr-tip { background: #e8f5e9; border-radius: 10px; padding: 8px 12px; margin: 8px 0 6px; text-align: left; font-size: 12px; color: #2e7d32; border-left: 4px solid #4caf50; }
+        .save-qr-tip strong { font-size: 13px; }
 
         .merchant-container { max-width: 600px; margin: 0 auto; background: #f5f6fa; min-height: 100vh; }
         .merchant-header { background: linear-gradient(135deg, #2c3e50 0%, #1a1a2e 100%); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
@@ -153,7 +153,6 @@
                 <label class="form-label">📞 联系电话 (11位手机号)</label>
                 <input type="tel" id="userPhone" class="form-input" placeholder="用于取餐通知，需11位手机号">
             </div>
-            <!-- 温度 + 甜度 口味选项 -->
             <div class="form-group">
                 <label class="form-label">🌡️ 温度选择</label>
                 <div class="flavor-tag-group" id="tempGroup">
@@ -192,30 +191,24 @@
     </div>
 </div>
 
-<!-- 支付弹窗（收款码） -->
+<!-- 支付弹窗（收款码）- 已去除“先提交订单”警告 -->
 <div id="paymentModal" class="modal-overlay">
     <div class="modal-content">
         <div class="payment-header">
-            <div style="font-size: 14px;">订单金额</div>
-            <div class="payment-amount" id="modalAmount">¥0.00</div>
+            <span>订单金额</span>
+            <span class="payment-amount" id="modalAmount">¥0.00</span>
         </div>
         <div>
             <img id="qrCodeImg" class="qr-img" referrerpolicy="no-referrer" src="qrcode.jpg" alt="收款码" onerror="this.src='https://placehold.co/200x200/FF9800/white?text=收款码'">
-            <div class="manual-save-hint">
-                <strong>📸 如何保存收款码？</strong>
-                <div>👉 <span id="saveMethodText">手机用户请长按图片，选择“保存图片”</span></div>
-                <div>👉 电脑用户请右键点击图片，选择“图片另存为”</div>
-                <div style="margin-top: 8px; color:#e74c3c;">⚠️ 支付完成后请告知商家，商家将在后台确认订单</div>
+            <div class="save-qr-tip">
+                <strong>📱 微信/支付宝付款</strong><br>
+                ➤ 请将手指长按上面付款二维码，选择“识别图中二维码”并完成支付。
             </div>
             <div class="qr-hint">
-                💡 付款步骤：<br>
+                💡 操作步骤：<br>
                 1️⃣ 点击下方绿色按钮提交订单<br>
-                2️⃣ 长按上方图片保存收款码<br>
-                3️⃣ 打开微信/支付宝扫码完成支付<br>
-                4️⃣ 支付成功后告知商家确认
-            </div>
-            <div class="warning-text">
-                ⚠️ 请先提交订单，再保存收款码完成支付！
+                2️⃣ 长按上方二维码 → 识别二维码 → 完成支付<br>
+                3️⃣ 支付成功后告知商家确认
             </div>
             <div id="submitStatus" class="submit-status" style="display:none;"></div>
         </div>
@@ -295,18 +288,14 @@
     let selectedTemp = "常温";
     let selectedSweet = "正常糖";
     
+    let leaveTime = null;
+    let visibilityHandler = null;
+    
     function autoFillStudentAccount() {
         const usernameInput = document.getElementById('username');
         const passwordInput = document.getElementById('password');
         if (usernameInput && !usernameInput.value) usernameInput.value = 'student';
         if (passwordInput && !passwordInput.value) passwordInput.value = '123456';
-    }
-    
-    function updateSaveMethodHint() {
-        const hintSpan = document.getElementById('saveMethodText');
-        if (!hintSpan) return;
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        hintSpan.innerHTML = isMobile ? '📱 手机用户请长按图片，选择“保存图片”' : '🖥️ 电脑用户请右键点击图片，选择“图片另存为”';
     }
     
     function isValidPhone(phone) { return /^1[3-9]\d{9}$/.test(phone); }
@@ -320,6 +309,29 @@
         statusEl.style.display = 'block';
     }
     function hideSubmitStatus() { const el = document.getElementById('submitStatus'); if(el) el.style.display = 'none'; }
+    
+    function setupVisibilityListener() {
+        if (visibilityHandler) {
+            document.removeEventListener('visibilitychange', visibilityHandler);
+        }
+        visibilityHandler = () => {
+            if (document.visibilityState === 'hidden') {
+                leaveTime = Date.now();
+            } else if (document.visibilityState === 'visible' && leaveTime !== null) {
+                const interval = (Date.now() - leaveTime) / 1000;
+                if (interval >= 15 && !orderSubmitted) {
+                    const modal = document.getElementById('paymentModal');
+                    if (modal && modal.classList.contains('active')) {
+                        if (confirm('您已离开付款页面超过15秒，是否已完成支付并立即提交订单？')) {
+                            window.saveAndSubmitOrder();
+                        }
+                    }
+                }
+                leaveTime = null;
+            }
+        };
+        document.addEventListener('visibilitychange', visibilityHandler);
+    }
     
     window.saveAndSubmitOrder = async function() {
         const btn = document.getElementById('submitOrderBtn');
@@ -348,15 +360,13 @@
         showNotification('订单提交成功！');
         btn.textContent = '✅ 订单已提交';
         btn.style.background = '#2196f3';
-        setTimeout(() => { showManualSaveHint(); btn.textContent = '✅ 订单已提交，请保存收款码支付'; setTimeout(() => hideSubmitStatus(), 5000); }, 500);
+        setTimeout(() => { showManualSaveHint(); btn.textContent = '✅ 订单已提交，请识别二维码支付'; setTimeout(() => hideSubmitStatus(), 5000); }, 500);
     };
     
     function showManualSaveHint() {
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        showNotification(isMobile ? '请长按收款码图片，选择“保存图片”' : '请右键点击收款码图片，选择“图片另存为”');
+        showNotification('请长按二维码选择“识别图中二维码”支付');
     }
     
-    // 生成完整备注（包含温度和甜度 + 额外文字）
     function buildFullRemark() {
         let baseRemark = `🌡️温度：${selectedTemp} / 🍬甜度：${selectedSweet}`;
         const extra = document.getElementById('orderRemark').value.trim();
@@ -414,8 +424,8 @@
         renderTimeSlots();
         updateSummary();
         orderSubmitted = false;
-        updateSaveMethodHint();
         initFlavorSelectors();
+        setupVisibilityListener();
     }
     
     function initFlavorSelectors() {
@@ -494,8 +504,8 @@
         btn.style.background = '#27ae60';
         hideSubmitStatus();
         document.getElementById('modalAmount').innerHTML = `¥${currentOrderTotal.toFixed(2)}`;
-        updateSaveMethodHint();
         document.getElementById('paymentModal').classList.add('active');
+        leaveTime = null;
     };
     
     window.closePayment = function() {
@@ -508,7 +518,6 @@
         }
     };
     
-    // 从remark中解析温度和甜度
     function parseFlavorFromRemark(remark) {
         if (!remark) return { temp: null, sweet: null };
         let temp = null, sweet = null;
@@ -597,7 +606,15 @@
         } else { showNotification('账号或密码错误'); }
     };
     
-    window.logout = function() { currentUser = null; document.getElementById('pageLogin').style.display = 'block'; document.getElementById('studentPage').style.display = 'none'; document.getElementById('merchantPage').style.display = 'none'; autoFillStudentAccount(); showNotification('已退出'); };
+    window.logout = function() { 
+        if (visibilityHandler) document.removeEventListener('visibilitychange', visibilityHandler);
+        currentUser = null; 
+        document.getElementById('pageLogin').style.display = 'block'; 
+        document.getElementById('studentPage').style.display = 'none'; 
+        document.getElementById('merchantPage').style.display = 'none'; 
+        autoFillStudentAccount(); 
+        showNotification('已退出'); 
+    };
     document.addEventListener('DOMContentLoaded', () => { autoFillStudentAccount(); });
 </script>
 </body>
