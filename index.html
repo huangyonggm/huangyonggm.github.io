@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>建设学校学生食堂 - 唐蔗拉茶点餐系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: #f5f6fa; }
+        
+        .container { max-width: 600px; margin: 0 auto; background: white; min-height: 100vh; }
+        .btn { padding: 10px 16px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: opacity 0.2s; }
+        .btn-primary { background: #FF9800; color: white; }
+        .btn-danger { background: #e74c3c; color: white; }
+        .btn-secondary { background: #95a5a6; color: white; }
+        .btn-success { background: #27ae60; color: white; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; background: rgba(255,255,255,0.3); color: white; border: none; border-radius: 6px; cursor: pointer; }
+
+        .login-container { padding: 40px 20px; text-align: center; }
+        .login-logo { font-size: 50px; margin-bottom: 20px; }
+        .login-title { font-size: 24px; margin-bottom: 30px; color: #333; }
+        .input-field { width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; margin-bottom: 15px; }
+        .login-tip { margin-top: 30px; font-size: 14px; color: #666; line-height: 1.6; }
+        .login-tip hr { margin: 20px 0; }
+        .test-account-hidden { color: #999; font-size: 13px; margin-top: 15px; padding-top: 15px; border-top: 1px dashed #ddd; }
+
+        .student-header { background: linear-gradient(135deg, #2c3e50 0%, #1a1a2e 100%); color: white; padding: 20px; text-align: center; }
+        .student-header h1 { font-size: 22px; margin-bottom: 5px; }
+        .student-header .subtitle { font-size: 12px; opacity: 0.8; margin-top: 5px; }
+        .info-bar { background: #fff8e1; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .info-text { font-size: 14px; color: #666; }
+        .info-text strong { color: #FF9800; }
+        .menu-section { padding: 15px; }
+        .menu-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #333; }
+        .food-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .food-card { border: 2px solid #e0e0e0; border-radius: 12px; padding: 12px; background: white; transition: transform 0.2s, box-shadow 0.2s; }
+        .food-img { width: 100%; height: 120px; background: linear-gradient(135deg, #FFF8E1 0%, #FFE0B2 100%); border-radius: 12px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .food-img .emoji-placeholder { font-size: 56px; }
+        .food-name { font-weight: bold; font-size: 15px; margin: 8px 0 4px; text-align: center; }
+        .food-price { color: #e74c3c; font-weight: bold; font-size: 18px; margin: 4px 0 8px; text-align: center; }
+        .food-price::before { content: '¥'; }
+        .qty-control { display: flex; align-items: center; gap: 8px; justify-content: center; }
+        .qty-btn { width: 28px; height: 28px; border-radius: 50%; border: none; background: #FF9800; color: white; font-size: 14px; cursor: pointer; }
+        .qty-value { font-size: 16px; font-weight: bold; min-width: 24px; text-align: center; }
+        .form-section { padding: 0 15px 15px; }
+        .form-group { margin-bottom: 15px; }
+        .form-label { display: block; font-size: 14px; color: #666; margin-bottom: 6px; }
+        .form-input { width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; }
+        .flavor-tag-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; }
+        .flavor-tag { padding: 6px 14px; border: 2px solid #e0e0e0; border-radius: 24px; font-size: 13px; cursor: pointer; background: white; transition: all 0.2s; }
+        .flavor-tag.selected { background: #FF9800; color: white; border-color: #FF9800; }
+        .time-slots { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
+        .time-tag { padding: 8px 16px; border: 2px solid #e0e0e0; border-radius: 20px; font-size: 14px; cursor: pointer; }
+        .time-tag.selected { background: #FF9800; color: white; border-color: #FF9800; }
+        .order-summary { background: #fff8e1; border-radius: 12px; padding: 15px; margin: 15px; }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .summary-row.total { font-size: 18px; font-weight: bold; border-top: 2px solid #ffe082; padding-top: 10px; margin-top: 10px; }
+        .summary-row.total span:last-child { color: #e74c3c; font-size: 24px; }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: white; border-radius: 20px; padding: 25px; text-align: center; max-width: 380px; width: 100%; max-height: 90vh; overflow-y: auto; }
+        .payment-header { background: linear-gradient(135deg, #FFC107 0%, #FF9800 100%); color: white; margin: -25px -25px 20px -25px; padding: 20px; border-radius: 20px 20px 0 0; }
+        .payment-amount { font-size: 32px; font-weight: bold; margin-top: 5px; }
+        .qr-img { width: 200px; height: 200px; object-fit: contain; margin: 10px auto; border: 1px solid #ddd; border-radius: 12px; display: block; }
+        .qr-hint { font-size: 13px; color: #666; margin: 10px 0; line-height: 1.5; }
+        .payment-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+        .action-btn { width: 100%; padding: 12px; border: none; border-radius: 10px; font-size: 15px; cursor: pointer; font-weight: 500; }
+        .btn-save-order { background: #27ae60; color: white; }
+        .btn-cancel { background: #ecf0f1; color: #666; }
+        .warning-text { color: #e74c3c; font-size: 12px; margin-top: 8px; padding: 6px; background: #ffe0e0; border-radius: 8px; }
+        .submit-status { margin-top: 10px; padding: 8px; border-radius: 8px; font-size: 13px; }
+        .submit-status.success { background: #d4edda; color: #155724; }
+        .submit-status.error { background: #f8d7da; color: #721c24; }
+        .submit-status.loading { background: #fff3cd; color: #856404; }
+        .manual-save-hint { background: #e3f2fd; border-radius: 10px; padding: 12px; margin: 15px 0 10px; text-align: left; font-size: 13px; color: #1565c0; border-left: 4px solid #2196f3; }
+        .manual-save-hint strong { display: block; margin-bottom: 8px; font-size: 14px; }
+
+        .merchant-container { max-width: 600px; margin: 0 auto; background: #f5f6fa; min-height: 100vh; }
+        .merchant-header { background: linear-gradient(135deg, #2c3e50 0%, #1a1a2e 100%); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .merchant-stats { display: flex; gap: 12px; margin: 15px; }
+        .stat-card { background: white; border-radius: 12px; padding: 15px; flex: 1; text-align: center; }
+        .stat-number { font-size: 28px; font-weight: bold; color: #FF9800; }
+        .stat-label { font-size: 12px; color: #666; }
+        .merchant-section { background: white; border-radius: 12px; margin: 15px; padding: 15px; }
+        .section-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; display: flex; justify-content: space-between; border-bottom: 2px solid #f1f1f1; padding-bottom: 10px; }
+        .product-item, .order-card { background: #fafafa; border-radius: 10px; padding: 12px; margin-bottom: 10px; border-left: 3px solid #FF9800; }
+        .product-row { display: flex; justify-content: space-between; align-items: center; }
+        .product-name { font-weight: bold; }
+        .product-price { color: #e74c3c; margin-top: 4px; }
+        .small-btn { padding: 6px 12px; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; background: #FF9800; color: white; }
+        .small-btn.danger { background: #e74c3c; }
+        .small-btn.success { background: #27ae60; }
+        .add-btn { background: #27ae60; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+        .order-status { padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; background: #fff8e1; color: #FF9800; display: inline-block; margin-left: 8px; }
+        .order-status.paid { background: #e8f5e9; color: #27ae60; }
+        .order-status.completed { background: #e3f2fd; color: #2196f3; }
+        .order-details { font-size: 13px; color: #666; line-height: 1.6; }
+        .flavor-badge { display: inline-block; background: #FF9800; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-right: 6px; margin-top: 4px; }
+        .flavor-badge.temp { background: #2196f3; }
+        .flavor-badge.sweet { background: #9c27b0; }
+        .system-badge { background: #2c3e50; color: #ffd700; padding: 4px 12px; border-radius: 20px; font-size: 12px; display: inline-block; margin-bottom: 10px; }
+        .empty-state { text-align: center; padding: 40px 20px; color: #999; }
+        .notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: #333; color: white; padding: 12px 24px; border-radius: 10px; z-index: 2000; transition: transform 0.3s; }
+        .notification.show { transform: translateX(-50%) translateY(0); }
+        .loading { text-align: center; padding: 20px; color: #999; }
+        .logout-btn { background: #e74c3c; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<!-- 登录页 -->
+<div id="pageLogin" class="container">
+    <div class="login-container">
+        <div class="login-logo">🧋</div>
+        <h2 class="login-title">建设学校学生食堂点餐系统</h2>
+        <p style="color:#FF9800; margin-bottom:20px;">唐蔗拉茶 · 专属点餐</p>
+        <input type="text" id="username" class="input-field" placeholder="账号名" autocomplete="off">
+        <input type="password" id="password" class="input-field" placeholder="密码" autocomplete="off">
+        <button class="btn btn-primary" onclick="window.login()">登录系统</button>
+        <div class="login-tip">
+            <hr style="margin: 20px 0;">
+            <div class="test-account-hidden">
+                ⚡ 体验说明：<br>
+                学生账号：student / 123456<br>
+                商户账号：naicha / 123456
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 学生端 -->
+<div id="studentPage" style="display:none;">
+    <div class="container">
+        <div class="student-header">
+            <div class="system-badge">🏫 建设学校学生食堂</div>
+            <h1>🧋 唐蔗拉茶</h1>
+            <p class="subtitle">扫码点餐 · 提交订单后请尽快支付</p>
+        </div>
+        <div class="info-bar" style="justify-content: flex-end;">
+            <button class="btn-sm" onclick="window.logout()" style="background:#e74c3c;">退出</button>
+        </div>
+        <div class="menu-section">
+            <h2 class="menu-title">📋 今日菜单</h2>
+            <div id="foodGrid" class="food-grid"><div class="loading">加载菜单中...</div></div>
+        </div>
+        <div class="form-section">
+            <div class="form-group">
+                <label class="form-label">👤 顾客姓名</label>
+                <input type="text" id="userName" class="form-input" placeholder="请输入您的称呼">
+            </div>
+            <div class="form-group">
+                <label class="form-label">📞 联系电话 (11位手机号)</label>
+                <input type="tel" id="userPhone" class="form-input" placeholder="用于取餐通知，需11位手机号">
+            </div>
+            <!-- 温度 + 甜度 口味选项 -->
+            <div class="form-group">
+                <label class="form-label">🌡️ 温度选择</label>
+                <div class="flavor-tag-group" id="tempGroup">
+                    <span data-temp="常温" class="flavor-tag selected">常温</span>
+                    <span data-temp="去冰" class="flavor-tag">去冰</span>
+                    <span data-temp="少冰" class="flavor-tag">少冰</span>
+                    <span data-temp="正常冰" class="flavor-tag">正常冰</span>
+                    <span data-temp="热" class="flavor-tag">热</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">🍬 甜度选择</label>
+                <div class="flavor-tag-group" id="sweetnessGroup">
+                    <span data-sweet="正常糖" class="flavor-tag selected">正常糖</span>
+                    <span data-sweet="3分糖" class="flavor-tag">3分糖</span>
+                    <span data-sweet="5分糖" class="flavor-tag">5分糖</span>
+                    <span data-sweet="7分糖" class="flavor-tag">7分糖</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">📝 额外备注</label>
+                <textarea id="orderRemark" class="form-input" rows="2" placeholder="默认不填"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">⏰ 取餐时间</label>
+                <div class="time-slots" id="timeSlots"></div>
+            </div>
+        </div>
+        <div class="order-summary">
+            <div class="summary-row"><span>已选商品</span><span id="itemCount">0 件</span></div>
+            <div class="summary-row total"><span>合计金额</span><span id="totalAmount">0.00</span></div>
+        </div>
+        <div style="padding: 0 15px 20px;">
+            <button class="btn btn-primary" style="width:100%; padding: 14px;" onclick="window.showPayment()">去结算</button>
+        </div>
+    </div>
+</div>
+
+<!-- 支付弹窗（收款码） -->
+<div id="paymentModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="payment-header">
+            <div style="font-size: 14px;">订单金额</div>
+            <div class="payment-amount" id="modalAmount">¥0.00</div>
+        </div>
+        <div>
+            <img id="qrCodeImg" class="qr-img" referrerpolicy="no-referrer" src="qrcode.jpg" alt="收款码" onerror="this.src='https://placehold.co/200x200/FF9800/white?text=收款码'">
+            <div class="manual-save-hint">
+                <strong>📸 如何保存收款码？</strong>
+                <div>👉 <span id="saveMethodText">手机用户请长按图片，选择“保存图片”</span></div>
+                <div>👉 电脑用户请右键点击图片，选择“图片另存为”</div>
+                <div style="margin-top: 8px; color:#e74c3c;">⚠️ 支付完成后请告知商家，商家将在后台确认订单</div>
+            </div>
+            <div class="qr-hint">
+                💡 付款步骤：<br>
+                1️⃣ 点击下方绿色按钮提交订单<br>
+                2️⃣ 长按上方图片保存收款码<br>
+                3️⃣ 打开微信/支付宝扫码完成支付<br>
+                4️⃣ 支付成功后告知商家确认
+            </div>
+            <div class="warning-text">
+                ⚠️ 请先提交订单，再保存收款码完成支付！
+            </div>
+            <div id="submitStatus" class="submit-status" style="display:none;"></div>
+        </div>
+        <div class="payment-actions">
+            <button class="action-btn btn-cancel" onclick="window.closePayment()">取消</button>
+            <button class="action-btn btn-save-order" id="submitOrderBtn" onclick="window.saveAndSubmitOrder()">📤 提交订单</button>
+        </div>
+    </div>
+</div>
+
+<!-- 商家端 -->
+<div id="merchantPage" style="display:none;">
+    <div class="merchant-container">
+        <div class="merchant-header">
+            <div>
+                <div style="font-size:12px; opacity:0.8;">🏫 建设学校学生食堂</div>
+                <h1 style="font-size:20px;">🧋 唐蔗拉茶 · 商家后台</h1>
+            </div>
+            <button class="logout-btn" onclick="window.logout()">退出</button>
+        </div>
+        <div class="merchant-stats">
+            <div class="stat-card"><div class="stat-number" id="totalProducts">0</div><div class="stat-label">商品</div></div>
+            <div class="stat-card"><div class="stat-number" id="pendingOrders">0</div><div class="stat-label">待确认收款</div></div>
+            <div class="stat-card"><div class="stat-number" id="totalOrders">0</div><div class="stat-label">总订单</div></div>
+        </div>
+        <div class="merchant-section">
+            <div class="section-title"><span>📦 商品管理</span><button class="add-btn" onclick="window.showAddProductModal()">+ 添加</button></div>
+            <div id="productManageList"><div class="loading">加载中...</div></div>
+        </div>
+        <div class="merchant-section">
+            <div class="section-title">📋 订单管理</div>
+            <div id="orderManageList"><div class="loading">加载中...</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- 添加商品弹窗 -->
+<div id="addProductModal" class="modal-overlay">
+    <div class="modal-content">
+        <h3>➕ 添加商品</h3>
+        <input type="text" id="newProductName" class="input-field" placeholder="商品名称">
+        <input type="number" id="newProductPrice" class="input-field" placeholder="价格" step="0.5">
+        <input type="text" id="newProductEmoji" class="input-field" placeholder="表情符号 (如 🧋🍉🍡)" value="🧋">
+        <div class="payment-actions" style="flex-direction: row;">
+            <button class="action-btn btn-cancel" onclick="window.closeAddProductModal()">取消</button>
+            <button class="action-btn btn-save-order" onclick="window.addProduct()">添加</button>
+        </div>
+    </div>
+</div>
+
+<div id="notification" class="notification"></div>
+
+<script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+    
+    const SUPABASE_URL = 'https://gfhlnjhubhpitwlbfycb.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_Z4ijnHHp9k5TsJ-TKvmRmQ_oBkq0RHm';
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    window.supabase = supabase;
+    
+    const DEFAULT_DRINKS = [
+        { name: '西瓜冰茶', price: 10, emoji: '🍉' },
+        { name: '芋圆波波', price: 15, emoji: '🍡' },
+        { name: '柠檬养乐多', price: 13, emoji: '🍋' },
+        { name: '芝士奶盖茶', price: 18, emoji: '🧀' },
+        { name: '芒果冰沙', price: 16, emoji: '🥭' },
+        { name: '奥利奥奶茶', price: 14, emoji: '🍪' }
+    ];
+    
+    let currentUser = null;
+    let currentOrderTotal = 0;
+    let selectedTime = "10分钟后";
+    let cart = [];
+    let orderSubmitted = false;
+    const timeOptions = ["6分钟后", "10分钟后", "20分钟后", "30分钟后", "1小时后"];
+    
+    let selectedTemp = "常温";
+    let selectedSweet = "正常糖";
+    
+    function autoFillStudentAccount() {
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        if (usernameInput && !usernameInput.value) usernameInput.value = 'student';
+        if (passwordInput && !passwordInput.value) passwordInput.value = '123456';
+    }
+    
+    function updateSaveMethodHint() {
+        const hintSpan = document.getElementById('saveMethodText');
+        if (!hintSpan) return;
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        hintSpan.innerHTML = isMobile ? '📱 手机用户请长按图片，选择“保存图片”' : '🖥️ 电脑用户请右键点击图片，选择“图片另存为”';
+    }
+    
+    function isValidPhone(phone) { return /^1[3-9]\d{9}$/.test(phone); }
+    function showNotification(msg) { const n = document.getElementById('notification'); n.textContent = msg; n.classList.add('show'); setTimeout(() => n.classList.remove('show'), 2000); }
+    window.showNotification = showNotification;
+    
+    function showSubmitStatus(message, type) {
+        const statusEl = document.getElementById('submitStatus');
+        statusEl.textContent = message;
+        statusEl.className = `submit-status ${type}`;
+        statusEl.style.display = 'block';
+    }
+    function hideSubmitStatus() { const el = document.getElementById('submitStatus'); if(el) el.style.display = 'none'; }
+    
+    window.saveAndSubmitOrder = async function() {
+        const btn = document.getElementById('submitOrderBtn');
+        if (orderSubmitted) { showNotification('订单已提交，请完成支付'); showManualSaveHint(); return; }
+        const name = document.getElementById('userName').value.trim();
+        const phone = document.getElementById('userPhone').value.trim();
+        const count = cart.reduce((s, i) => s + (i.qty || 0), 0);
+        if (count === 0) { showNotification('购物车是空的'); return; }
+        if (!name) { showNotification('请输入姓名'); return; }
+        if (!isValidPhone(phone)) { showNotification('请输入正确的11位手机号码'); return; }
+        if (currentOrderTotal <= 0) { showNotification('金额错误'); return; }
+        
+        btn.disabled = true;
+        btn.textContent = '⏳ 正在提交订单...';
+        showSubmitStatus('正在提交订单到商户端...', 'loading');
+        
+        const orderResult = await submitOrderToServer();
+        if (!orderResult.success) {
+            btn.disabled = false; btn.textContent = '📤 提交订单';
+            showSubmitStatus(orderResult.message, 'error');
+            showNotification('订单提交失败：' + orderResult.message);
+            return;
+        }
+        orderSubmitted = true;
+        showSubmitStatus('✅ 订单已成功提交到商户端！', 'success');
+        showNotification('订单提交成功！');
+        btn.textContent = '✅ 订单已提交';
+        btn.style.background = '#2196f3';
+        setTimeout(() => { showManualSaveHint(); btn.textContent = '✅ 订单已提交，请保存收款码支付'; setTimeout(() => hideSubmitStatus(), 5000); }, 500);
+    };
+    
+    function showManualSaveHint() {
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        showNotification(isMobile ? '请长按收款码图片，选择“保存图片”' : '请右键点击收款码图片，选择“图片另存为”');
+    }
+    
+    // 生成完整备注（包含温度和甜度 + 额外文字）
+    function buildFullRemark() {
+        let baseRemark = `🌡️温度：${selectedTemp} / 🍬甜度：${selectedSweet}`;
+        const extra = document.getElementById('orderRemark').value.trim();
+        if (extra) baseRemark += ` / 备注：${extra}`;
+        return baseRemark;
+    }
+    
+    async function submitOrderToServer() {
+        const name = document.getElementById('userName').value.trim();
+        const phone = document.getElementById('userPhone').value.trim();
+        const fullRemark = buildFullRemark();
+        const orderItems = cart.filter(i => (i.qty || 0) > 0).map(i => ({
+            id: i.id, name: i.name, price: i.price, qty: i.qty, total: i.price * i.qty
+        }));
+        const orderData = {
+            order_no: 'JS' + Date.now().toString().slice(-8),
+            customer_name: name,
+            customer_phone: phone,
+            location: '1号窗口',
+            pickup_time: selectedTime,
+            remark: fullRemark,
+            items: orderItems,
+            total_amount: currentOrderTotal,
+            status: 'pending'
+        };
+        try {
+            const { data, error } = await supabase.from('orders').insert([orderData]).select();
+            if (error) return { success: false, message: error.message };
+            cart.forEach(i => i.qty = 0);
+            const products = await loadProducts();
+            renderMenu(products);
+            updateSummary();
+            return { success: true, message: '订单提交成功', data: data[0] };
+        } catch (err) { return { success: false, message: err.message || '网络错误' }; }
+    }
+    
+    async function initDefaultProducts() {
+        const { count, error } = await supabase.from('products').select('*', { count: 'exact', head: true });
+        if (!error && count === 0) {
+            for (const drink of DEFAULT_DRINKS) await supabase.from('products').insert([drink]);
+        }
+    }
+    
+    async function loadProducts() { const { data, error } = await supabase.from('products').select('*').order('id'); return error ? [] : (data || []); }
+    async function addProductToDB(name, price, emoji) { const { data, error } = await supabase.from('products').insert([{ name, price, emoji }]).select(); if (error) throw error; return data[0]; }
+    async function updateProductInDB(id, name, price) { const { error } = await supabase.from('products').update({ name, price }).eq('id', id); if (error) throw error; }
+    async function deleteProductFromDB(id) { const { error } = await supabase.from('products').delete().eq('id', id); if (error) throw error; }
+    async function loadOrders() { const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false }); return error ? [] : (data || []); }
+    async function updateOrderStatus(orderId, status) { const { error } = await supabase.from('orders').update({ status }).eq('id', orderId); if (error) throw error; }
+    
+    async function initStudentPage() {
+        await initDefaultProducts();
+        const products = await loadProducts();
+        renderMenu(products);
+        renderTimeSlots();
+        updateSummary();
+        orderSubmitted = false;
+        updateSaveMethodHint();
+        initFlavorSelectors();
+    }
+    
+    function initFlavorSelectors() {
+        document.querySelectorAll('#tempGroup .flavor-tag').forEach(el => {
+            el.addEventListener('click', () => {
+                document.querySelectorAll('#tempGroup .flavor-tag').forEach(t => t.classList.remove('selected'));
+                el.classList.add('selected');
+                selectedTemp = el.getAttribute('data-temp');
+            });
+        });
+        document.querySelectorAll('#sweetnessGroup .flavor-tag').forEach(el => {
+            el.addEventListener('click', () => {
+                document.querySelectorAll('#sweetnessGroup .flavor-tag').forEach(t => t.classList.remove('selected'));
+                el.classList.add('selected');
+                selectedSweet = el.getAttribute('data-sweet');
+            });
+        });
+    }
+    
+    function renderMenu(products) {
+        cart = products.map(p => ({ ...p, qty: 0 }));
+        const grid = document.getElementById('foodGrid');
+        grid.innerHTML = cart.map(item => `
+            <div class="food-card">
+                <div class="food-img"><div class="emoji-placeholder">${item.emoji || '🧋'}</div></div>
+                <div class="food-name">${item.name}</div>
+                <div class="food-price">${item.price}</div>
+                <div class="qty-control">
+                    <button class="qty-btn" onclick="window.changeQty(${item.id}, -1)">-</button>
+                    <span class="qty-value" id="qty_${item.id}">${item.qty}</span>
+                    <button class="qty-btn" onclick="window.changeQty(${item.id}, 1)">+</button>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    window.changeQty = function(id, delta) {
+        const item = cart.find(i => i.id === id);
+        if (item) {
+            const newQty = (item.qty || 0) + delta;
+            if (newQty >= 0 && newQty <= 99) {
+                item.qty = newQty;
+                const span = document.getElementById(`qty_${id}`);
+                if (span) span.innerText = item.qty;
+                updateSummary();
+            }
+        }
+    };
+    
+    function updateSummary() {
+        const total = cart.reduce((s, i) => s + i.price * (i.qty || 0), 0);
+        const count = cart.reduce((s, i) => s + (i.qty || 0), 0);
+        document.getElementById('totalAmount').innerHTML = `¥${total.toFixed(2)}`;
+        document.getElementById('itemCount').innerText = `${count} 件`;
+        currentOrderTotal = total;
+    }
+    
+    function renderTimeSlots() {
+        const container = document.getElementById('timeSlots');
+        container.innerHTML = timeOptions.map(t => `<div class="time-tag ${t === selectedTime ? 'selected' : ''}" onclick="window.selectTime('${t}')">${t}</div>`).join('');
+    }
+    window.selectTime = function(t) { selectedTime = t; renderTimeSlots(); };
+    
+    window.showPayment = function() {
+        const name = document.getElementById('userName').value.trim();
+        const phone = document.getElementById('userPhone').value.trim();
+        const count = cart.reduce((s, i) => s + (i.qty || 0), 0);
+        if (count === 0) return showNotification('请先选择商品');
+        if (!name) return showNotification('请输入姓名');
+        if (!isValidPhone(phone)) return showNotification('请输入正确的11位手机号码');
+        if (currentOrderTotal <= 0) return showNotification('金额错误');
+        orderSubmitted = false;
+        const btn = document.getElementById('submitOrderBtn');
+        btn.disabled = false;
+        btn.textContent = '📤 提交订单';
+        btn.style.background = '#27ae60';
+        hideSubmitStatus();
+        document.getElementById('modalAmount').innerHTML = `¥${currentOrderTotal.toFixed(2)}`;
+        updateSaveMethodHint();
+        document.getElementById('paymentModal').classList.add('active');
+    };
+    
+    window.closePayment = function() {
+        document.getElementById('paymentModal').classList.remove('active');
+        if (orderSubmitted) {
+            document.getElementById('userName').value = '';
+            document.getElementById('userPhone').value = '';
+            document.getElementById('orderRemark').value = '';
+            orderSubmitted = false;
+        }
+    };
+    
+    // 从remark中解析温度和甜度
+    function parseFlavorFromRemark(remark) {
+        if (!remark) return { temp: null, sweet: null };
+        let temp = null, sweet = null;
+        const tempMatch = remark.match(/温度[：:]\s*([^\/\s]+)/);
+        const sweetMatch = remark.match(/甜度[：:]\s*([^\/\s]+)/);
+        if (tempMatch) temp = tempMatch[1];
+        if (sweetMatch) sweet = sweetMatch[1];
+        return { temp, sweet };
+    }
+    
+    async function renderOrderList() {
+        const orders = await loadOrders();
+        const container = document.getElementById('orderManageList');
+        if (orders.length === 0) { container.innerHTML = '<div class="empty-state">暂无订单</div>'; return; }
+        container.innerHTML = orders.map(order => {
+            let statusText = '', statusClass = '';
+            if (order.status === 'pending') { statusText = '⏳ 待确认收款'; statusClass = ''; }
+            else if (order.status === 'paid') { statusText = '💰 已收款'; statusClass = 'paid'; }
+            else { statusText = '✅ 已完成'; statusClass = 'completed'; }
+            
+            const { temp, sweet } = parseFlavorFromRemark(order.remark);
+            
+            return `<div class="order-card">
+                <div><span class="order-id">${order.order_no}</span><span class="order-status ${statusClass}">${statusText}</span></div>
+                <div class="order-details">
+                    <div>🏫 建设学校学生食堂 | 🧋 唐蔗拉茶</div>
+                    <div>👤 ${order.customer_name} | 📞 ${order.customer_phone}</div>
+                    <div>📍 ${order.location || '1号窗口'} | ⏰ ${order.pickup_time}</div>
+                    ${(temp || sweet) ? `<div>🍽️ <strong>口味要求：</strong> ${temp ? `<span class="flavor-badge temp">🌡️ ${temp}</span>` : ''} ${sweet ? `<span class="flavor-badge sweet">🍬 ${sweet}</span>` : ''}</div>` : ''}
+                    <div>📝 完整备注：${order.remark || '无'}</div>
+                    <div>🕐 ${new Date(order.created_at).toLocaleString('zh-CN')}</div>
+                    <div>🧾 ${order.items.map(i => `${i.name} x${i.qty}`).join('、')}</div>
+                    <div>💵 合计金额：<strong style="color:#e74c3c;">¥${order.total_amount}</strong></div>
+                </div>
+                ${order.status === 'pending' ? `<button class="small-btn success" style="margin-top:10px; width:100%;" onclick="window.confirmPaymentOrder(${order.id})">✓ 确认已收款</button>` : ''}
+                ${order.status === 'paid' ? `<button class="small-btn" style="margin-top:10px; width:100%; background:#2196f3;" onclick="window.completeOrder(${order.id})">📦 完成取餐</button>` : ''}
+            </div>`;
+        }).join('');
+    }
+    
+    async function initMerchantPage() {
+        await initDefaultProducts();
+        await renderProductList();
+        await renderOrderList();
+        await updateStats();
+        supabase.channel('orders-channel').on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => { renderOrderList(); updateStats(); }).subscribe();
+    }
+    
+    async function renderProductList() {
+        const products = await loadProducts();
+        const container = document.getElementById('productManageList');
+        if (products.length === 0) { container.innerHTML = '<div class="empty-state">暂无商品，点击添加</div>'; return; }
+        container.innerHTML = products.map(item => `<div class="product-item"><div class="product-row"><div><div class="product-name">${item.emoji || '🧋'} ${item.name}</div><div class="product-price">¥${item.price}</div></div><div><button class="small-btn" onclick="window.editProduct(${item.id})">编辑</button><button class="small-btn danger" onclick="window.deleteProduct(${item.id})">删除</button></div></div></div>`).join('');
+    }
+    
+    async function updateStats() {
+        const products = await loadProducts();
+        const orders = await loadOrders();
+        document.getElementById('totalProducts').innerText = products.length;
+        document.getElementById('pendingOrders').innerText = orders.filter(o => o.status === 'pending').length;
+        document.getElementById('totalOrders').innerText = orders.length;
+    }
+    
+    window.confirmPaymentOrder = async function(orderId) { await updateOrderStatus(orderId, 'paid'); showNotification('已确认收款'); await renderOrderList(); await updateStats(); };
+    window.completeOrder = async function(orderId) { await updateOrderStatus(orderId, 'completed'); showNotification('订单已完成取餐'); await renderOrderList(); await updateStats(); };
+    window.editProduct = async function(id) {
+        const products = await loadProducts(); const item = products.find(p => p.id === id);
+        const newName = prompt('新名称', item.name); const newPrice = prompt('新价格', item.price);
+        if (newName && newPrice && !isNaN(newPrice) && parseFloat(newPrice) > 0) { await updateProductInDB(id, newName.trim(), parseFloat(newPrice)); showNotification('已更新'); await renderProductList(); const updated = await loadProducts(); renderMenu(updated); }
+    };
+    window.deleteProduct = async function(id) { if (confirm('确定删除？')) { await deleteProductFromDB(id); showNotification('已删除'); await renderProductList(); await updateStats(); const products = await loadProducts(); renderMenu(products); } };
+    window.showAddProductModal = function() { document.getElementById('addProductModal').classList.add('active'); };
+    window.closeAddProductModal = function() { document.getElementById('addProductModal').classList.remove('active'); };
+    window.addProduct = async function() {
+        const name = document.getElementById('newProductName').value.trim(); const price = parseFloat(document.getElementById('newProductPrice').value); const emoji = document.getElementById('newProductEmoji').value.trim() || '🧋';
+        if (!name || isNaN(price) || price <= 0) return showNotification('请正确填写'); await addProductToDB(name, price, emoji); window.closeAddProductModal(); showNotification('添加成功'); await renderProductList(); await updateStats(); const products = await loadProducts(); renderMenu(products);
+        document.getElementById('newProductName').value = ''; document.getElementById('newProductPrice').value = ''; document.getElementById('newProductEmoji').value = '🧋';
+    };
+    
+    window.login = async function() {
+        const username = document.getElementById('username').value; const password = document.getElementById('password').value;
+        if (username === 'student' && password === '123456') {
+            currentUser = { type: 'student' }; document.getElementById('pageLogin').style.display = 'none'; document.getElementById('studentPage').style.display = 'block'; document.getElementById('merchantPage').style.display = 'none'; await initStudentPage(); showNotification('欢迎，同学！');
+        } else if (username === 'naicha' && password === '123456') {
+            currentUser = { type: 'merchant' }; document.getElementById('pageLogin').style.display = 'none'; document.getElementById('studentPage').style.display = 'none'; document.getElementById('merchantPage').style.display = 'block'; await initMerchantPage(); showNotification('欢迎，商家！');
+        } else { showNotification('账号或密码错误'); }
+    };
+    
+    window.logout = function() { currentUser = null; document.getElementById('pageLogin').style.display = 'block'; document.getElementById('studentPage').style.display = 'none'; document.getElementById('merchantPage').style.display = 'none'; autoFillStudentAccount(); showNotification('已退出'); };
+    document.addEventListener('DOMContentLoaded', () => { autoFillStudentAccount(); });
+</script>
+</body>
+</html>
